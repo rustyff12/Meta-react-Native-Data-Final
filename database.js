@@ -32,6 +32,18 @@ export function saveMenuItems(menuItems) {
     // 2. Implement a single SQL statement to save all menu data in a table called menuitems.
     // Check the createTable() function above to see all the different columns the table has
     // Hint: You need a SQL statement to insert multiple rows at once.
+    const placeholders = menuItems.map(() => "(?, ?, ?, ?)").join(", ");
+
+    const values = menuItems.flatmap((item) => [
+      item.uuid,
+      item.title,
+      item.price,
+      item.category,
+    ]);
+    tx.executeSql(
+      `insert into menuitems (uuid, title, price, category) values ${placeholders}`,
+      values
+    );
   });
 }
 
