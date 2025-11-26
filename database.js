@@ -29,9 +29,6 @@ export async function getMenuItems() {
 
 export function saveMenuItems(menuItems) {
   db.withTransactionAsync((tx) => {
-    // 2. Implement a single SQL statement to save all menu data in a table called menuitems.
-    // Check the createTable() function above to see all the different columns the table has
-    // Hint: You need a SQL statement to insert multiple rows at once.
     const placeholders = menuItems.map(() => "(?, ?, ?, ?)").join(", ");
 
     const values = menuItems.flatmap((item) => [

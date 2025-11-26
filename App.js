@@ -43,7 +43,7 @@ export default function App() {
       const req = await fetch(API_URL);
       const res = await req.json();
 
-      const menuRes = res.menu.mp((item) => ({
+      const menuRes = res.menu.map((item) => ({
         ...item,
         category: item.category.title,
       }));
