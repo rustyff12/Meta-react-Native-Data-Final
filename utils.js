@@ -1,5 +1,3 @@
-import { useRef, useEffect } from "react";
-
 export const SECTION_LIST_MOCK_DATA = [
   {
     title: "Appetizers",

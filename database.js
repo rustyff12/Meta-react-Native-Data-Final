@@ -19,25 +19,6 @@ export const getMenuItems = async () => {
   return await db.getAllAsync("SELECT * FROM menuitems");
 };
 
-// export const saveMenuItems = async (menuItems) => {
-//   if (!menuItems?.length) return;
-
-//   const stmt = db.prepareSync(
-//     `INSERT OR REPLACE INTO menuitems (id, title, price, category)
-//      VALUES (?, ?, ?, ?)`
-//   );
-
-//   try {
-//     await db.withExclusiveTransactionAsync(() => {
-//       for (const item of menuItems) {
-//         stmt.runSync(item.id, item.title, item.price.toString(), item.category);
-//       }
-//     });
-//   } finally {
-//     stmt.finalizeSync();
-//   }
-// };
-
 export const saveMenuItems = async (menuItems) => {
   if (!menuItems?.length) return;
 
