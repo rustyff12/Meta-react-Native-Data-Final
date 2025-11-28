@@ -1,71 +1,78 @@
 import * as SQLite from "expo-sqlite";
-import { SECTION_LIST_MOCK_DATA } from "./utils";
 
-const db = SQLite.openDatabaseSync("little_lemon");
+const db = SQLite.openDatabaseSync("little_lemon.db");
 
-export async function createTable() {
-  return new Promise((resolve, reject) => {
-    db.withTransactionAsync(
-      (tx) => {
-        tx.executeSql(
-          "create table if not exists menuitems (id integer primary key not null, uuid text, title text, price text, category text);"
-        );
-      },
-      reject,
-      resolve
+export const createTable = async () => {
+  await db.execAsync(`
+
+
+    CREATE TABLE IF NOT EXISTS menuitems (
+      id INTEGER PRIMARY KEY NOT NULL,   
+      title TEXT NOT NULL,
+      price TEXT NOT NULL,
+      category TEXT NOT NULL
     );
-  });
-}
+  `);
+};
 
-export async function getMenuItems() {
-  return new Promise((resolve) => {
-    db.withTransactionAsync((tx) => {
-      tx.executeSql("select * from menuitems", [], (_, { rows }) => {
-        resolve(rows._array);
-      });
-    });
-  });
-}
+export const getMenuItems = async () => {
+  return await db.getAllAsync("SELECT * FROM menuitems");
+};
 
-export function saveMenuItems(menuItems) {
-  db.withTransactionAsync((tx) => {
-    const placeholders = menuItems.map(() => "(?, ?, ?, ?)").join(", ");
+// export const saveMenuItems = async (menuItems) => {
+//   if (!menuItems?.length) return;
 
-    const values = menuItems.flatmap((item) => [
-      item.uuid,
-      item.title,
-      item.price,
-      item.category,
-    ]);
-    tx.executeSql(
-      `insert into menuitems (uuid, title, price, category) values ${placeholders}`,
-      values
-    );
-  });
-}
+//   const stmt = db.prepareSync(
+//     `INSERT OR REPLACE INTO menuitems (id, title, price, category)
+//      VALUES (?, ?, ?, ?)`
+//   );
 
-/**
- * 4. Implement a transaction that executes a SQL statement to filter the menu by 2 criteria:
- * a query string and a list of categories.
- *
- * The query string should be matched against the menu item titles to see if it's a substring.
- * For example, if there are 4 items in the database with titles: 'pizza, 'pasta', 'french fries' and 'salad'
- * the query 'a' should return 'pizza' 'pasta' and 'salad', but not 'french fries'
- * since the latter does not contain any 'a' substring anywhere in the sequence of characters.
- *
- * The activeCategories parameter represents an array of selected 'categories' from the filter component
- * All results should belong to an active category to be retrieved.
- * For instance, if 'pizza' and 'pasta' belong to the 'Main Dishes' category and 'french fries' and 'salad' to the 'Sides' category,
- * a value of ['Main Dishes'] for active categories should return  only'pizza' and 'pasta'
- *
- * Finally, the SQL statement must support filtering by both criteria at the same time.
- * That means if the query is 'a' and the active category 'Main Dishes', the SQL statement should return only 'pizza' and 'pasta'
- * 'french fries' is excluded because it's part of a different category and 'salad' is excluded due to the same reason,
- * even though the query 'a' it's a substring of 'salad', so the combination of the two filters should be linked with the AND keyword
- *
- */
-export async function filterByQueryAndCategories(query, activeCategories) {
-  return new Promise((resolve, reject) => {
-    resolve(SECTION_LIST_MOCK_DATA);
-  });
-}
+//   try {
+//     await db.withExclusiveTransactionAsync(() => {
+//       for (const item of menuItems) {
+//         stmt.runSync(item.id, item.title, item.price.toString(), item.category);
+//       }
+//     });
+//   } finally {
+//     stmt.finalizeSync();
+//   }
+// };
+
+export const saveMenuItems = async (menuItems) => {
+  if (!menuItems?.length) return;
+
+  const placeholders = menuItems.map(() => "(?, ?, ?, ?)").join(", ");
+  const values = menuItems.flatMap((item) => [
+    item.id,
+    item.title,
+    item.price.toString(),
+    item.category,
+  ]);
+
+  await db.runAsync(
+    `INSERT OR REPLACE INTO menuitems (id, title, price, category) VALUES ${placeholders}`,
+    values
+  );
+};
+
+export const filterByQueryAndCategories = async (
+  query = "",
+  categories = []
+) => {
+  let sql = "SELECT * FROM menuitems";
+  const params = [];
+
+  if (categories.length > 0) {
+    sql += ` WHERE category IN (${categories.map(() => "?").join(", ")})`;
+    params.push(...categories);
+  }
+
+  const results = await db.getAllAsync(sql, params);
+
+  if (!query.trim()) return results;
+
+  const lowerQuery = query.toLowerCase();
+  return results.filter((item) =>
+    item.title.toLowerCase().includes(lowerQuery)
+  );
+};

@@ -16,7 +16,7 @@ import {
   filterByQueryAndCategories,
 } from "./database";
 import Filters from "./components/Filters";
-import { getSectionListData, useUpdateEffect } from "./utils";
+import { getSectionListData } from "./utils";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 const API_URL =
@@ -40,11 +40,13 @@ export default function App() {
 
   const fetchData = async () => {
     try {
-      const req = await fetch(API_URL);
-      const res = await req.json();
+      const res = await fetch(API_URL);
+      const json = await res.json();
 
-      const menuRes = res.menu.map((item) => ({
-        ...item,
+      const menuRes = json.menu.map((item) => ({
+        id: item.id,
+        title: item.title,
+        price: item.price,
         category: item.category.title,
       }));
 
@@ -60,42 +62,44 @@ export default function App() {
     (async () => {
       try {
         await createTable();
+
         let menuItems = await getMenuItems();
 
         if (!menuItems.length) {
-          const menuItems = await fetchData();
-          saveMenuItems(menuItems);
+          const fetchedItems = await fetchData();
+
+          await saveMenuItems(fetchedItems);
+
+          menuItems = fetchedItems;
         }
 
         const sectionListData = getSectionListData(menuItems);
+
         setData(sectionListData);
       } catch (e) {
+        console.error("Error in useEffect:", e);
         Alert.alert(e.message);
       }
     })();
   }, []);
 
-  useUpdateEffect(() => {
+  useEffect(() => {
     (async () => {
-      const activeCategories = sections.filter((s, i) => {
-        // If all filters are deselected, all categories are active
-        if (filterSelections.every((item) => item === false)) {
-          return true;
-        }
-        return filterSelections[i];
-      });
+      const activeCategories = filterSelections.every((selected) => !selected)
+        ? sections
+        : sections.filter((_, i) => filterSelections[i]);
+
       try {
         const menuItems = await filterByQueryAndCategories(
           query,
           activeCategories
         );
-        const sectionListData = getSectionListData(menuItems);
-        setData(sectionListData);
+        setData(getSectionListData(menuItems));
       } catch (e) {
-        Alert.alert(e.message);
+        Alert.alert("Error", e.message);
       }
     })();
-  }, [filterSelections, query]);
+  }, [query, filterSelections]);
 
   const lookup = useCallback((q) => {
     setQuery(q);
@@ -136,7 +140,7 @@ export default function App() {
           <SectionList
             style={styles.sectionList}
             sections={data}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <Item title={item.title} price={item.price} />
             )}

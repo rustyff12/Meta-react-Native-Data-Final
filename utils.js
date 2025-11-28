@@ -1,5 +1,4 @@
 import { useRef, useEffect } from "react";
-import { SectionList, View, Text } from "react-native";
 
 export const SECTION_LIST_MOCK_DATA = [
   {
@@ -42,21 +41,20 @@ export function getSectionListData(data) {
     }
     sectionsMap[item.category].push(item);
   });
-
   return Object.keys(sectionsMap).map((category) => ({
     title: category,
     data: sectionsMap[category],
   }));
 }
 
-export function useUpdateEffect(effect, dependencies = []) {
-  const isInitialMount = useRef(true);
+// export function useUpdateEffect(effect, dependencies = []) {
+//   const isInitialMount = useRef(true);
 
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-    } else {
-      return effect();
-    }
-  }, dependencies);
-}
+//   useEffect(() => {
+//     if (isInitialMount.current) {
+//       isInitialMount.current = false;
+//     } else {
+//       return effect();
+//     }
+//   }, dependencies);
+// }
